@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Proveedores Mineros SJ</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--tx:#e2e8f0;--mut:#94a3b8;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--ac:#38bdf8}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);line-height:1.45}
+header{padding:18px 16px 8px}h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:var(--mut);font-size:14px}
+main{padding:0 16px 40px;max-width:760px;margin:auto}
+.card{background:var(--card);border-radius:14px;padding:14px;margin:12px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select,input,button{font:inherit;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--tx);padding:9px 10px}
+button{background:var(--ac);color:#06223a;font-weight:700;border:0;cursor:pointer}
+button.sec{background:#334155;color:var(--tx)}
+.bar{height:12px;background:#0b1220;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.kpi{background:#0b1220;border-radius:10px;padding:8px;text-align:center}.kpi b{display:block;font-size:20px}
+.doc{border-top:1px solid #334155;padding:12px 0}.doc:first-child{border-top:0}
+.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;color:#0f172a}
+.vig{background:var(--ok)}.por{background:var(--warn)}.ven{background:var(--bad)}.fal{background:#64748b;color:#fff}
+small{color:var(--mut)}
+</style></head><body>
+<header><h1>⛏️ Proveedores Mineros SJ</h1><p>Control de documentación de contratistas para mineras. Prototipo: los datos se guardan solo en este navegador.</p></header>
+<main>
+<div class="card"><div class="row">
+<select id="sel" aria-label="Contratista"></select>
+<button id="add">+ Contratista</button><button id="del" class="sec">Quitar</button></div>
+<div style="margin-top:12px"><div class="bar"><i id="bar"></i></div>
+<div class="kpis"><div class="kpi"><b id="k1">0</b><small>Vigentes</small></div><div class="kpi"><b id="k2">0</b><small>Por vencer (30 d)</small></div><div class="kpi"><b id="k3">0</b><small>Vencidos / faltan</small></div></div>
+<p id="msg" style="margin:10px 0 0"></p></div></div>
+<div class="card" id="docs"></div>
+<p><small>Lista base (borrador a confirmar con mineras reales): ARCA, Rentas San Juan, ART, seguro RC, F.931, registro provincial, seguridad e higiene.</small></p>
+</main>
+<script>
+var DOCS=["Constancia ARCA","Rentas San Juan","ART (certificado de cobertura)","Seguro de Responsabilidad Civil","F.931 / pago de cargas sociales","Registro provincial de proveedores mineros","Seguridad e higiene (programa)"];
+var KEY="spm_v1",S;
+function load(){try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}if(!S||!S.c)S={c:[{id:1,name:"Contratista demo SRL",d:{}}],sel:1,n:2}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function cur(){return S.c.find(function(x){return x.id==S.sel})||S.c[0]}
+function days(d){return Math.floor((new Date(d+"T00:00:00")-new Date(new Date().toDateString()))/864e5)}
+function est(d){if(!d)return["fal","Falta cargar"];var n=days(d);if(n<0)return["ven","Vencido hace "+(-n)+" d"];if(n<=30)return["por","Vence en "+n+" d"];return["vig","Vigente ("+n+" d)"]}
+function render(){
+ var sel=document.getElementById("sel");sel.innerHTML=S.c.map(function(c){return '<option value="'+c.id+'"'+(c.id==S.sel?' selected':'')+'>'+c.name.replace(/</g,"&lt;")+'</option>'}).join("");
+ var c=cur(),a=0,b=0,r=0,h="";
+ DOCS.forEach(function(n,i){var v=c.d[i]||"",e=est(v);if(e[0]=="vig")a++;else if(e[0]=="por")b++;else r++;
+  h+='<div class="doc"><div class="row" style="justify-content:space-between"><b>'+n+'</b><span class="tag '+e[0]+'">'+e[1]+'</span></div><div class="row" style="margin-top:6px"><small>Vence:</small><input type="date" data-i="'+i+'" value="'+v+'"></div></div>'});
+ document.getElementById("docs").innerHTML=h;
+ document.getElementById("k1").textContent=a;document.getElementById("k2").textContent=b;document.getElementById("k3").textContent=r;
+ var p=Math.round((a+b)/DOCS.length*100);document.getElementById("bar").style.width=p+"%";
+ document.getElementById("msg").innerHTML=r==0&&b==0?"✅ Documentación completa y vigente.":(r>0?"⚠️ "+r+" documento(s) bloquean el alta ante la minera.":"🟡 "+b+" documento(s) por vencer: renovar pronto.");
+}
+document.addEventListener("change",function(e){var t=e.target;if(t.id=="sel"){S.sel=+t.value}else if(t.dataset&&t.dataset.i!==undefined){cur().d[t.dataset.i]=t.value}save();render()});
+document.getElementById("add").onclick=function(){var n=prompt("Nombre del contratista:");if(!n)return;S.c.push({id:S.n,name:n,d:{}});S.sel=S.n++;save();render()};
+document.getElementById("del").onclick=function(){if(S.c.length<2||!confirm("¿Quitar "+cur().name+"?"))return;S.c=S.c.filter(function(x){return x.id!=S.sel});S.sel=S.c[0].id;save();render()};
+load();render();
+</script></body></html>
