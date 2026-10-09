@@ -97,3 +97,4 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); tex
 .metrics { grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
 .page { grid-template-columns: minmax(0, 1fr); }
 .field { min-width: 0; } .field input, .field select { width: 100%; min-width: 0; }
+.card ul, .card ol { padding-left: 1.25rem; margin: 0; display: grid; gap: 4px; } .card ul { list-style: disc; } .card ol { list-style: decimal; } .card p { margin: 0 0 6px; }
